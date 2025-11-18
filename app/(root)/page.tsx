@@ -1,94 +1,198 @@
-import Link from "next/link";
-import Image from "next/image";
-
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { getSessionsByUserId } from "@/lib/actions/general.action";
 import { Button } from "@/components/ui/button";
-import InterviewCard from "@/components/InterviewCard";
+import Link from "next/link";
+import dayjs from "dayjs";
 
-import { getCurrentUser } from "@/lib/actions/auth.action";
-import {
-  getInterviewsByUserId,
-  getLatestInterviews,
-} from "@/lib/actions/general.action";
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session");
 
-async function Home() {
-  const user = await getCurrentUser();
+  if (!sessionCookie) {
+    redirect("/sign-in");
+  }
 
-  const [userInterviews, allInterview] = await Promise.all([
-    getInterviewsByUserId(user?.id!),
-    getLatestInterviews({ userId: user?.id! }),
-  ]);
+  const userId = sessionCookie.value;
 
-  const hasPastInterviews = userInterviews?.length! > 0;
-  const hasUpcomingInterviews = allInterview?.length! > 0;
+  // Fetch sessions
+  let sessions: Session[] = [];
+  try {
+    sessions = await getSessionsByUserId(userId) || [];
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    sessions = [];
+  }
 
   return (
-    <>
-      <section className="card-cta">
-        <div className="flex flex-col gap-6 max-w-lg">
-          <h2>Get Interview-Ready with AI-Powered Practice & Feedback</h2>
-          <p className="text-lg">
-            Practice real interview questions & get instant feedback
-          </p>
+    <div className="root-layout">
+      {/* Hero Section - Mental Health Focus */}
+      <div className="bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl p-12 mb-12">
+        <div className="flex items-center justify-between">
+          <div className="max-w-2xl">
+            <h1 className="text-5xl font-bold mb-4">
+              Your Safe Space for Mental Wellness
+            </h1>
+            <p className="text-xl text-light-100 mb-6">
+              Connect with Dr. Sarah, your compassionate AI therapist. Have supportive 
+              conversations about anxiety, stress, relationships, and more.
+            </p>
+            <Button asChild size="lg" className="btn-primary">
+              <Link href="/session/create">Start Therapy Session</Link>
+            </Button>
+          </div>
+          <div className="hidden lg:block">
+            <img
+              src="/ai-avatar.png"
+              alt="Dr. Sarah"
+              className="w-64 h-64 rounded-full"
+            />
+          </div>
+        </div>
+      </div>
 
-          <Button asChild className="btn-primary max-sm:w-full">
-            <Link href="/interview">Start an Interview</Link>
+      {/* Important Disclaimer */}
+      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 mb-12">
+        <h3 className="text-yellow-500 font-semibold mb-2">⚠️ Important Note</h3>
+        <p className="text-sm text-light-100">
+          This AI companion provides supportive conversations but is NOT a replacement for 
+          professional mental health care. If you're in crisis, please call{" "}
+          <strong>988</strong> (Suicide & Crisis Lifeline) or <strong>911</strong>.
+        </p>
+      </div>
+
+      {/* Your Therapy Sessions */}
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-3xl font-bold">Your Therapy Sessions</h2>
+          <Button asChild variant="outline">
+            <Link href="/session/create">New Session</Link>
           </Button>
         </div>
 
-        <Image
-          src="/robot.png"
-          alt="robo-dude"
-          width={400}
-          height={400}
-          className="max-sm:hidden"
-        />
-      </section>
+        {sessions && sessions.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sessions.map((session) => (
+              <Link
+                key={session.id}
+                href={
+                  session.finalized
+                    ? `/session/${session.id}/insights`
+                    : `/session/${session.id}`
+                }
+                className="bg-dark-300 rounded-lg p-6 hover:bg-dark-400 transition-colors border border-light-700"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">
+                      {session.focusArea}
+                    </h3>
+                    <p className="text-sm text-light-400">
+                      {session.sessionType} • {session.therapyApproach}
+                    </p>
+                  </div>
+                  {session.finalized ? (
+                    <span className="bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-xs font-semibold">
+                      Completed
+                    </span>
+                  ) : (
+                    <span className="bg-blue-500/20 text-blue-500 px-3 py-1 rounded-full text-xs font-semibold">
+                      In Progress
+                    </span>
+                  )}
+                </div>
 
-      <section className="flex flex-col gap-6 mt-8">
-        <h2>Your Interviews</h2>
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-light-400">Mood:</span>
+                    <span className="text-light-100 capitalize">{session.mood}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-light-400">Duration:</span>
+                    <span className="text-light-100">{session.duration} minutes</span>
+                  </div>
+                </div>
 
-        <div className="interviews-section">
-          {hasPastInterviews ? (
-            userInterviews?.map((interview) => (
-              <InterviewCard
-                key={interview.id}
-                userId={user?.id}
-                interviewId={interview.id}
-                role={interview.role}
-                type={interview.type}
-                techstack={interview.techstack}
-                createdAt={interview.createdAt}
-              />
-            ))
-          ) : (
-            <p>You haven&apos;t taken any interviews yet</p>
-          )}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {session.tags.slice(0, 3).map((tag, index) => (
+                    <span
+                      key={index}
+                      className="bg-primary/20 text-primary px-2 py-1 rounded text-xs"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="text-xs text-light-400">
+                  {dayjs(session.createdAt).format("MMM D, YYYY [at] h:mm A")}
+                </p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-dark-300 rounded-lg p-12 text-center">
+            <img
+              src="/robot.png"
+              alt="No sessions"
+              className="w-32 h-32 mx-auto mb-4 opacity-50"
+            />
+            <h3 className="text-xl font-semibold mb-2">No therapy sessions yet</h3>
+            <p className="text-light-400 mb-6">
+              Start your first session with Dr. Sarah to begin your mental wellness journey.
+            </p>
+            <Button asChild className="btn-primary">
+              <Link href="/session/create">Start First Session</Link>
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* How It Works */}
+      <div className="bg-dark-300 rounded-lg p-8">
+        <h2 className="text-3xl font-bold mb-8 text-center">How It Works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className="bg-primary/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl font-bold text-primary">1</span>
+            </div>
+            <h3 className="font-semibold mb-2">Choose Your Focus</h3>
+            <p className="text-sm text-light-400">
+              Select what you want to talk about: anxiety, stress, relationships, or more.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="bg-primary/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl font-bold text-primary">2</span>
+            </div>
+            <h3 className="font-semibold mb-2">Start Conversation</h3>
+            <p className="text-sm text-light-400">
+              Talk naturally with Dr. Sarah through voice. She listens and responds empathetically.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="bg-primary/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl font-bold text-primary">3</span>
+            </div>
+            <h3 className="font-semibold mb-2">Get Support</h3>
+            <p className="text-sm text-light-400">
+              Receive validation, coping strategies, and a safe space to express yourself.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="bg-primary/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl font-bold text-primary">4</span>
+            </div>
+            <h3 className="font-semibold mb-2">Review Insights</h3>
+            <p className="text-sm text-light-400">
+              Get personalized insights, mood tracking, and actionable recommendations.
+            </p>
+          </div>
         </div>
-      </section>
-
-      <section className="flex flex-col gap-6 mt-8">
-        <h2>Take Interviews</h2>
-
-        <div className="interviews-section">
-          {hasUpcomingInterviews ? (
-            allInterview?.map((interview) => (
-              <InterviewCard
-                key={interview.id}
-                userId={user?.id}
-                interviewId={interview.id}
-                role={interview.role}
-                type={interview.type}
-                techstack={interview.techstack}
-                createdAt={interview.createdAt}
-              />
-            ))
-          ) : (
-            <p>There are no interviews available</p>
-          )}
-        </div>
-      </section>
-    </>
+      </div>
+    </div>
   );
 }
-
-export default Home;
