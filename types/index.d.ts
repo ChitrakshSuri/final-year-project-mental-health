@@ -115,7 +115,7 @@ interface AgentProps {
   userId?: string;
   interviewId?: string;
   feedbackId?: string;
-  type: "generate" | "interview";
+  type: "generate" | "interview" | "session";
   questions?: string[];
 }
 
