@@ -1,5 +1,5 @@
 "use server";
-
+import { z } from "zod";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 
@@ -122,4 +122,182 @@ export async function getInterviewsByUserId(
     id: doc.id,
     ...doc.data(),
   })) as Interview[];
+}
+
+
+// ===== MENTAL HEALTH SESSION ACTIONS =====
+
+export async function getSessionsByUserId(userId: string) {
+  try {
+    const sessions = await db
+      .collection("sessions")
+      .where("userId", "==", userId)
+      .orderBy("createdAt", "desc")
+      .get();
+
+    return sessions.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Session[];
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    throw error;
+  }
+}
+
+export async function getLatestSessions({
+  userId,
+  limit = 10,
+}: {
+  userId: string;
+  limit?: number;
+}) {
+  try {
+    const sessions = await db
+      .collection("sessions")
+      .where("finalized", "==", true)
+      .where("userId", "!=", userId)
+      .orderBy("userId")
+      .orderBy("createdAt", "desc")
+      .limit(limit)
+      .get();
+
+    return sessions.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Session[];
+  } catch (error) {
+    console.error("Error fetching latest sessions:", error);
+    throw error;
+  }
+}
+
+export async function getSessionById(sessionId: string) {
+  try {
+    const session = await db.collection("sessions").doc(sessionId).get();
+
+    if (!session.exists) {
+      throw new Error("Session not found");
+    }
+
+    return {
+      id: session.id,
+      ...session.data(),
+    } as Session;
+  } catch (error) {
+    console.error("Error fetching session:", error);
+    throw error;
+  }
+}
+
+export async function createInsight({
+  sessionId,
+  userId,
+  transcript,
+  insightId,
+}: CreateInsightParams) {
+  try {
+    const session = await getSessionById(sessionId);
+
+    if (session.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Format transcript for AI analysis
+    const formattedTranscript = transcript
+      .map((msg) => `${msg.role === "user" ? "Client" : "Therapist"}: ${msg.content}`)
+      .join("\n");
+
+    // Generate insight using Gemini AI (using the same SDK as createFeedback)
+    const { object } = await generateObject({
+      model: google("gemini-2.0-flash-001", {
+        structuredOutputs: false,
+      }),
+      schema: z.object({
+        emotionalState: z.string(),
+        moodScore: z.number(),
+        keyThemes: z.array(z.string()),
+        copingStrategies: z.array(z.string()),
+        recommendedActions: z.array(z.string()),
+        finalAssessment: z.string(),
+      }),
+      prompt: `You are a compassionate AI therapist analyzing a therapy session transcript. Provide supportive insights without diagnosing.
+
+Transcript:
+${formattedTranscript}
+
+Analyze the session and provide insights in these areas:
+- **Emotional State**: Overall emotional state observed (avoid clinical diagnoses)
+- **Mood Score**: Rate emotional wellbeing from 0-100 (0=very distressed, 100=very positive)
+- **Key Themes**: Main topics discussed (e.g., work stress, relationships, sleep)
+- **Coping Strategies**: Healthy/unhealthy coping mechanisms mentioned
+- **Recommended Actions**: 3-5 specific, actionable self-care suggestions
+- **Final Assessment**: Supportive summary of the session
+
+CRITICAL: 
+- Never diagnose mental health conditions
+- Frame everything as observations and suggestions
+- Be empathetic and non-judgmental
+- Focus on strengths and growth opportunities`,
+      system: "You are a compassionate AI therapist providing supportive insights. Never diagnose. Focus on observations and actionable wellness suggestions.",
+    });
+
+    // Save insight to Firestore
+    const insightRef = insightId
+      ? db.collection("insights").doc(insightId)
+      : db.collection("insights").doc();
+
+    await insightRef.set({
+      sessionId,
+      ...object,
+      createdAt: new Date().toISOString(),
+    });
+
+    // Mark session as finalized
+    await db.collection("sessions").doc(sessionId).update({
+      finalized: true,
+    });
+
+    return {
+      id: insightRef.id,
+      sessionId,
+      ...object,
+      createdAt: new Date().toISOString(),
+    } as Insight;
+  } catch (error) {
+    console.error("Error creating insight:", error);
+    throw error;
+  }
+}
+
+export async function getInsightBySessionId({
+  sessionId,
+  userId,
+}: GetInsightBySessionIdParams) {
+  try {
+    const session = await getSessionById(sessionId);
+
+    if (session.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const insights = await db
+      .collection("insights")
+      .where("sessionId", "==", sessionId)
+      .limit(1)
+      .get();
+
+    if (insights.empty) {
+      return null;
+    }
+
+    const insight = insights.docs[0];
+    return {
+      id: insight.id,
+      ...insight.data(),
+    } as Insight;
+  } catch (error) {
+    console.error("Error fetching insight:", error);
+    throw error;
+  }
 }
