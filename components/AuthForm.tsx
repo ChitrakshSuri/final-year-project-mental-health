@@ -105,7 +105,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
           <h2 className="text-primary-100">Lumira</h2>
         </div>
 
-        <h3>Practice job interviews with AI</h3>
+        <h3>Your Safe Space for Mental Wellness</h3>
 
         <Form {...form}>
           <form

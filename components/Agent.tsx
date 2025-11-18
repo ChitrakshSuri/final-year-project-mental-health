@@ -10,17 +10,16 @@ import { Loader2, Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 export default function Agent({
   userName,
   userId,
-  interviewId,
   sessionId,
-  feedbackId,
   insightId,
-  type,
-  questions,
   prompts,
-}: AgentProps & {
+}: {
+  userName: string;
+  userId?: string;
   sessionId?: string;
   insightId?: string;
   prompts?: string[];
+  type?: string;
 }) {
   const router = useRouter();
   const [connecting, setConnecting] = useState(false);
@@ -76,41 +75,19 @@ export default function Agent({
     }
 
     try {
-      if (type === "interview") {
-        // Interview feedback generation
-        const { createFeedback } = await import("@/lib/actions/general.action");
-        
-        toast.info("Generating feedback...");
-        
-        const result = await createFeedback({
-          interviewId: interviewId!,
-          userId: userId!,
-          transcript,
-          feedbackId,
-        });
+      const { createInsight } = await import("@/lib/actions/general.action");
 
-        if (result.success) {
-          toast.success("Feedback generated!");
-          router.push(`/interview/${interviewId}/feedback`);
-        } else {
-          toast.error("Failed to generate feedback");
-        }
-      } else if (type === "session") {
-        // Therapy session insights generation
-        const { createInsight } = await import("@/lib/actions/general.action");
-        
-        toast.info("Generating session insights...");
-        
-        const result = await createInsight({
-          sessionId: sessionId!,
-          userId: userId!,
-          transcript,
-          insightId,
-        });
+      toast.info("Generating session insights...");
 
-        toast.success("Session insights generated!");
-        router.push(`/session/${sessionId}/insights`);
-      }
+      await createInsight({
+        sessionId: sessionId!,
+        userId: userId!,
+        transcript,
+        insightId,
+      });
+
+      toast.success("Session insights generated!");
+      router.push(`/session/${sessionId}/insights`);
     } catch (error) {
       console.error("Error processing session:", error);
       toast.error("Something went wrong");
@@ -123,13 +100,10 @@ export default function Agent({
     setConnecting(true);
 
     try {
-      // Determine which assistant to use
-      const assistantId = type === "session" 
-        ? process.env.NEXT_PUBLIC_VAPI_THERAPIST_ASSISTANT_ID
-        : process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
+      const assistantId = process.env.NEXT_PUBLIC_VAPI_THERAPIST_ASSISTANT_ID;
 
       if (!assistantId) {
-        throw new Error("Assistant ID not configured");
+        throw new Error("Therapist assistant not configured");
       }
 
       await vapiRef.current.start(assistantId);
@@ -155,17 +129,16 @@ export default function Agent({
     }
   };
 
-  const isInterview = type === "interview";
-  const isSession = type === "session";
-
   return (
     <div className="flex flex-col items-center gap-6">
       {/* AI Avatar */}
       <div className="relative">
         <img
           src="/ai-avatar.png"
-          alt={isSession ? "Therapist" : "AI Interviewer"}
-          className={`w-32 h-32 rounded-full ${connected ? "ring-4 ring-primary animate-pulse" : ""}`}
+          alt="Dr. Sarah - AI Therapist"
+          className={`w-32 h-32 rounded-full ${
+            connected ? "ring-4 ring-primary animate-pulse" : ""
+          }`}
         />
         {connected && (
           <div className="absolute -bottom-2 -right-2 bg-green-500 text-white rounded-full p-2">
@@ -177,19 +150,17 @@ export default function Agent({
       {/* Status Text */}
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">
-          {isSession ? "Dr. Sarah - Your AI Therapist" : "AI Interview Assistant"}
+          Dr. Sarah - Your AI Therapist
         </h2>
         {connecting && <p className="text-light-400">Connecting...</p>}
         {connected && (
           <p className="text-green-500 font-semibold">
-            {isSession ? "Session in progress - Speak freely" : "Interview in progress"}
+            Session in progress - Speak freely
           </p>
         )}
         {!connected && !connecting && (
           <p className="text-light-400">
-            {isSession 
-              ? "Click below to start your therapy session" 
-              : "Click below to start your interview"}
+            Click below to start your therapy session
           </p>
         )}
       </div>
@@ -197,13 +168,9 @@ export default function Agent({
       {/* Controls */}
       <div className="flex gap-4">
         {!connected && !connecting && (
-          <Button
-            onClick={startCall}
-            className="btn-primary gap-2"
-            size="lg"
-          >
+          <Button onClick={startCall} className="btn-primary gap-2" size="lg">
             <Phone className="w-5 h-5" />
-            {isSession ? "Start Session" : "Start Interview"}
+            Start Session
           </Button>
         )}
 
@@ -242,7 +209,7 @@ export default function Agent({
               className="gap-2"
             >
               <PhoneOff className="w-5 h-5" />
-              {isSession ? "End Session" : "End Interview"}
+              End Session
             </Button>
           </>
         )}
@@ -252,17 +219,9 @@ export default function Agent({
       {!connected && !connecting && (
         <div className="bg-dark-400 rounded-lg p-4 max-w-md text-center">
           <p className="text-sm text-light-400">
-            {isSession ? (
-              <>
-                This is a safe, confidential space. Speak naturally about whatever is on your mind. 
-                Dr. Sarah will listen and guide the conversation based on your needs.
-              </>
-            ) : (
-              <>
-                Answer questions naturally as you would in a real interview. 
-                The AI will ask follow-up questions based on your responses.
-              </>
-            )}
+            This is a safe, confidential space. Speak naturally about whatever
+            is on your mind. Dr. Sarah will listen and guide the conversation
+            based on your needs.
           </p>
         </div>
       )}

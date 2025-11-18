@@ -59,41 +59,13 @@ interface SessionFormProps {
 
 // ===== ORIGINAL INTERVIEW TYPES (keeping for backward compatibility) =====
 
-interface Feedback {
-  id: string;
-  interviewId: string;
-  totalScore: number;
-  categoryScores: Array<{
-    name: string;
-    score: number;
-    comment: string;
-  }>;
-  strengths: string[];
-  areasForImprovement: string[];
-  finalAssessment: string;
-  createdAt: string;
-}
 
-interface Interview {
-  id: string;
-  role: string;
-  level: string;
-  questions: string[];
-  techstack: string[];
-  createdAt: string;
-  userId: string;
-  type: string;
-  finalized: boolean;
-}
+
+
 
 // ... rest of your existing interfaces
 
-interface CreateFeedbackParams {
-  interviewId: string;
-  userId: string;
-  transcript: { role: string; content: string }[];
-  feedbackId?: string;
-}
+
 
 interface User {
   name: string;
@@ -101,14 +73,7 @@ interface User {
   id: string;
 }
 
-interface InterviewCardProps {
-  interviewId?: string;
-  userId?: string;
-  role: string;
-  type: string;
-  techstack: string[];
-  createdAt?: string;
-}
+
 
 interface AgentProps {
   userName: string;
@@ -124,15 +89,9 @@ interface RouteParams {
   searchParams: Promise<Record<string, string>>;
 }
 
-interface GetFeedbackByInterviewIdParams {
-  interviewId: string;
-  userId: string;
-}
 
-interface GetLatestInterviewsParams {
-  userId: string;
-  limit?: number;
-}
+
+
 
 interface SignInParams {
   email: string;
@@ -148,15 +107,5 @@ interface SignUpParams {
 
 type FormType = "sign-in" | "sign-up";
 
-interface InterviewFormProps {
-  interviewId: string;
-  role: string;
-  level: string;
-  type: string;
-  techstack: string[];
-  amount: number;
-}
 
-interface TechIconProps {
-  techStack: string[];
-}
+
