@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import SessionForm from "@/components/SessionForm";
 
 export default async function CreateSessionPage() {
   const cookieStore = await cookies();
@@ -8,6 +9,9 @@ export default async function CreateSessionPage() {
   if (!session) {
     redirect("/sign-in");
   }
+
+  // Get user ID from session
+  const userId = session.value;
 
   return (
     <div className="root-layout">
@@ -30,9 +34,7 @@ export default async function CreateSessionPage() {
           </ul>
         </div>
 
-        <div className="text-center">
-          <p className="text-light-100 mb-4">Session creation form coming soon...</p>
-        </div>
+        <SessionForm userId={userId} />
       </div>
     </div>
   );
