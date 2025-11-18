@@ -301,3 +301,82 @@ export async function getInsightBySessionId({
     throw error;
   }
 }
+
+export async function createSession({
+  userId,
+  focusArea,
+  sessionType,
+  therapyApproach,
+  mood,
+  duration,
+}: {
+  userId: string;
+  focusArea: string;
+  sessionType: string;
+  therapyApproach: string;
+  mood: string;
+  duration: number;
+}) {
+  try {
+    // Generate therapy prompts using Gemini AI
+    const { object } = await generateObject({
+      model: google("gemini-2.0-flash-001", {
+        structuredOutputs: false,
+      }),
+      schema: z.object({
+        prompts: z.array(z.string()),
+        tags: z.array(z.string()),
+      }),
+      prompt: `You are a compassionate therapist preparing conversation prompts for a therapy session.
+
+Session Details:
+- Focus Area: ${focusArea}
+- Session Type: ${sessionType}
+- Therapy Approach: ${therapyApproach}
+- Current Mood: ${mood}
+- Duration: ${duration} minutes
+
+Generate 5-8 thoughtful, open-ended prompts/questions for the therapist to explore during the session. These should:
+- Be empathetic and non-judgmental
+- Encourage self-reflection
+- Be appropriate for the focus area and mood
+- Follow the selected therapy approach (${therapyApproach})
+- Be open-ended (avoid yes/no questions)
+
+Also generate 3-5 relevant tags for this session (e.g., anxiety, work-stress, relationships).
+
+Examples of good prompts:
+- "Can you tell me more about what's been weighing on your mind lately?"
+- "How have these feelings been affecting your daily life?"
+- "What coping strategies have you tried so far?"`,
+      system: "You are a professional therapist creating conversation prompts for a supportive therapy session.",
+    });
+
+    // Create session in Firestore
+    const sessionRef = db.collection("sessions").doc();
+
+    await sessionRef.set({
+      userId,
+      focusArea,
+      sessionType,
+      therapyApproach,
+      mood,
+      duration,
+      prompts: object.prompts,
+      tags: object.tags,
+      finalized: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      sessionId: sessionRef.id,
+    };
+  } catch (error) {
+    console.error("Error creating session:", error);
+    return {
+      success: false,
+      error: "Failed to create session",
+    };
+  }
+}

@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { createSession } from "@/lib/actions/general.action";
 
 const sessionSchema = z.object({
   focusArea: z.string().min(1, "Please select a focus area"),
@@ -48,16 +49,33 @@ export default function SessionForm({ userId }: { userId: string }) {
     },
   });
 
-  const onSubmit = async (data: SessionFormData) => {
-    setIsLoading(true);
-    toast.info("Creating your session...");
+const onSubmit = async (data: SessionFormData) => {
+  setIsLoading(true);
+  toast.info("Creating your session...");
 
-    // TODO: Implement session creation
-    console.log("Session data:", data);
-    
+  try {
+    const result = await createSession({
+      userId,
+      focusArea: data.focusArea,
+      sessionType: data.sessionType,
+      therapyApproach: data.therapyApproach,
+      mood: data.mood,
+      duration: parseInt(data.duration),
+    });
+
+    if (result.success) {
+      toast.success("Session created! Redirecting...");
+      router.push(`/session/${result.sessionId}`);
+    } else {
+      toast.error("Failed to create session. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    toast.error("Something went wrong. Please try again.");
+  } finally {
     setIsLoading(false);
-    toast.success("Session created! Redirecting...");
-  };
+  }
+};
 
   return (
     <Form {...form}>
