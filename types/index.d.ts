@@ -57,23 +57,11 @@ interface SessionFormProps {
   duration: number;
 }
 
-// ===== ORIGINAL INTERVIEW TYPES (keeping for backward compatibility) =====
-
-
-
-
-
-// ... rest of your existing interfaces
-
-
-
 interface User {
   name: string;
   email: string;
   id: string;
 }
-
-
 
 interface AgentProps {
   userName: string;

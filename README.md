@@ -69,9 +69,10 @@ npm run dev
 ## Important Note
 
 This is an AI companion for supportive conversations and is NOT a replacement for professional mental health care. If you're in crisis, please contact:
-- National Suicide Prevention Lifeline (US): 988
-- Crisis Text Line: Text HOME to 741741
-- International: findahelpline.com
+- **AASRA Foundation (India)**: Call **022-27546669** (24/7 Helpline)
+- **Tele-MANAS (India)**: Call **1-800-891-4416 / 14416** (National Mental Health Support)
+- **Emergency Services (India)**: Call **112** (Police, Ambulance, etc.)
+- For international resources: visit [findahelpline.com](https://www.findahelpline.com)
 
 ## License
 MIT

@@ -18,7 +18,7 @@ export default async function HomePage() {
   // Fetch sessions
   let sessions: Session[] = [];
   try {
-    sessions = await getSessionsByUserId(userId) || [];
+    sessions = (await getSessionsByUserId(userId)) || [];
   } catch (error) {
     console.error("Error fetching sessions:", error);
     sessions = [];
@@ -34,8 +34,9 @@ export default async function HomePage() {
               Your Safe Space for Mental Wellness
             </h1>
             <p className="text-xl text-light-100 mb-6">
-              Connect with Dr. Sarah, your compassionate AI therapist. Have supportive 
-              conversations about anxiety, stress, relationships, and more.
+              Connect with Dr. Sarah, your compassionate AI therapist. Have
+              supportive conversations about anxiety, stress, relationships, and
+              more.
             </p>
             <Button asChild size="lg" className="btn-primary">
               <Link href="/session/create">Start Therapy Session</Link>
@@ -53,11 +54,16 @@ export default async function HomePage() {
 
       {/* Important Disclaimer */}
       <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 mb-12">
-        <h3 className="text-yellow-500 font-semibold mb-2">⚠️ Important Note</h3>
+        <h3 className="text-yellow-500 font-semibold mb-2">
+          ⚠️ Important Note
+        </h3>
         <p className="text-sm text-light-100">
-          This AI companion provides supportive conversations but is NOT a replacement for 
-          professional mental health care. If you're in crisis, please call{" "}
-          <strong>988</strong> (Suicide & Crisis Lifeline) or <strong>911</strong>.
+          This AI companion provides supportive conversations but is NOT a
+          replacement for professional mental health care. If you're in crisis,
+          please call <strong>022-27546669</strong> (AASRA Foundation - 24/7
+          helpline), <strong>1-800-891-4416 / 14416</strong> (Tele-MANAS -
+          National Mental Health Support), or <strong>112</strong> (Emergency
+          Services).
         </p>
       </div>
 
@@ -105,11 +111,15 @@ export default async function HomePage() {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-light-400">Mood:</span>
-                    <span className="text-light-100 capitalize">{session.mood}</span>
+                    <span className="text-light-100 capitalize">
+                      {session.mood}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-light-400">Duration:</span>
-                    <span className="text-light-100">{session.duration} minutes</span>
+                    <span className="text-light-100">
+                      {session.duration} minutes
+                    </span>
                   </div>
                 </div>
 
@@ -137,9 +147,12 @@ export default async function HomePage() {
               alt="No sessions"
               className="w-32 h-32 mx-auto mb-4 opacity-50"
             />
-            <h3 className="text-xl font-semibold mb-2">No therapy sessions yet</h3>
+            <h3 className="text-xl font-semibold mb-2">
+              No therapy sessions yet
+            </h3>
             <p className="text-light-400 mb-6">
-              Start your first session with Dr. Sarah to begin your mental wellness journey.
+              Start your first session with Dr. Sarah to begin your mental
+              wellness journey.
             </p>
             <Button asChild className="btn-primary">
               <Link href="/session/create">Start First Session</Link>
@@ -158,7 +171,8 @@ export default async function HomePage() {
             </div>
             <h3 className="font-semibold mb-2">Choose Your Focus</h3>
             <p className="text-sm text-light-400">
-              Select what you want to talk about: anxiety, stress, relationships, or more.
+              Select what you want to talk about: anxiety, stress,
+              relationships, or more.
             </p>
           </div>
 
@@ -168,7 +182,8 @@ export default async function HomePage() {
             </div>
             <h3 className="font-semibold mb-2">Start Conversation</h3>
             <p className="text-sm text-light-400">
-              Talk naturally with Dr. Sarah through voice. She listens and responds empathetically.
+              Talk naturally with Dr. Sarah through voice. She listens and
+              responds empathetically.
             </p>
           </div>
 
@@ -178,7 +193,8 @@ export default async function HomePage() {
             </div>
             <h3 className="font-semibold mb-2">Get Support</h3>
             <p className="text-sm text-light-400">
-              Receive validation, coping strategies, and a safe space to express yourself.
+              Receive validation, coping strategies, and a safe space to express
+              yourself.
             </p>
           </div>
 
@@ -188,7 +204,8 @@ export default async function HomePage() {
             </div>
             <h3 className="font-semibold mb-2">Review Insights</h3>
             <p className="text-sm text-light-400">
-              Get personalized insights, mood tracking, and actionable recommendations.
+              Get personalized insights, mood tracking, and actionable
+              recommendations.
             </p>
           </div>
         </div>
