@@ -130,3 +130,23 @@ export async function isAuthenticated() {
   const user = await getCurrentUser();
   return !!user;
 }
+
+export async function getUserById(userId: string): Promise<User | null> {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+
+    if (!userDoc.exists) {
+      return null;
+    }
+
+    const userData = userDoc.data();
+    return {
+      id: userDoc.id,
+      name: userData?.name || "User",
+      email: userData?.email || "",
+    };
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+}

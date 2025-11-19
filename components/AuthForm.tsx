@@ -8,6 +8,8 @@ import { auth } from "@/firebase/client";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 import {
   createUserWithEmailAndPassword,
@@ -24,12 +26,14 @@ const authFormSchema = (type: FormType) => {
   return z.object({
     name: type === "sign-up" ? z.string().min(3) : z.string().optional(),
     email: z.string().email(),
-    password: z.string().min(3),
+    password: z.string().min(6, "Password must be at least 6 characters"),
   });
 };
 
 const AuthForm = ({ type }: { type: FormType }) => {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const formSchema = authFormSchema(type);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -42,6 +46,8 @@ const AuthForm = ({ type }: { type: FormType }) => {
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    setLoading(true);
+
     try {
       if (type === "sign-up") {
         const { name, email, password } = data;
@@ -89,9 +95,27 @@ const AuthForm = ({ type }: { type: FormType }) => {
         toast.success("Signed in successfully.");
         router.push("/");
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(`There was an error: ${error}`);
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+      
+      // Better error messages
+      if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+        toast.error("Invalid email or password. Please try again.");
+      } else if (error.code === "auth/user-not-found") {
+        toast.error("No account found with this email. Please sign up.");
+      } else if (error.code === "auth/invalid-email") {
+        toast.error("Invalid email address.");
+      } else if (error.code === "auth/too-many-requests") {
+        toast.error("Too many failed attempts. Please try again later.");
+      } else if (error.code === "auth/email-already-in-use") {
+        toast.error("This email is already registered. Please sign in.");
+      } else if (error.code === "auth/weak-password") {
+        toast.error("Password is too weak. Use at least 6 characters.");
+      } else {
+        toast.error("Authentication failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,16 +154,31 @@ const AuthForm = ({ type }: { type: FormType }) => {
               type="email"
             />
 
-            <FormField
-              control={form.control}
-              name="password"
-              label="Password"
-              placeholder="Enter your password"
-              type="password"
-            />
+            {/* Password field with eye icon */}
+            <div className="relative">
+              <FormField
+                control={form.control}
+                name="password"
+                label="Password"
+                placeholder="Enter your password"
+                type={showPassword ? "text" : "password"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-9 text-light-400 hover:text-light-100 transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
 
-            <Button className="btn" type="submit">
-              {isSignIn ? "Sign In" : "Create an Account"}
+            <Button className="btn w-full" type="submit" disabled={loading}>
+              {loading ? "Processing..." : isSignIn ? "Sign In" : "Create an Account"}
             </Button>
           </form>
         </Form>
